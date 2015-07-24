@@ -1,13 +1,13 @@
 local cache = require 'cache'
-local etcd = require 'etcd'
 local route = require 'route'
+local config = require 'config'
 
 ngx.timer.at(0, function()
-  etcd.getUpdates(cache, route, true)
+  config.data.getUpdates(cache, route, true)
   ngx.timer.at(0, function()
     while true do
       local ok, err = pcall(function()
-        etcd.getUpdates(cache, route)
+        config.data.getUpdates(cache, route)
       end)
       if not ok then ngx.log(ngx.ERR, err) end
     end

@@ -1,6 +1,6 @@
 # Dockerfile for openresty
 
-FROM ubuntu:14.04
+FROM ubuntu:15.04
 MAINTAINER Robert Ditthardt <dditthardt@olivinelabs.com>
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -8,7 +8,7 @@ ENV OPENRESTY_VERSION 1.7.10.2
 
 RUN apt-get update
 RUN apt-get upgrade -y
-RUN apt-get install -y wget git libpq-dev luarocks lua-sec liburiparser-dev libssl-dev
+RUN apt-get install -y wget git libpq-dev luarocks lua-sec liburiparser-dev libssl-dev libr3-dev
 
 # Openresty (Nginx)
 RUN apt-get -y build-dep nginx \
@@ -21,14 +21,12 @@ RUN wget -O ngx_openresty.tar.gz http://openresty.org/download/ngx_openresty-$OP
   && make install \
   && rm -rf /ngx_openresty-$OPENRESTY_VERSION
 
-#RUN cd /tmp && git clone https://github.com/pintsized/lua-resty-http.git && cd lua-resty-http && make && make install
-
 RUN mkdir /tmp/logs
 RUN mkdir /app
 
-ADD src/app-scm-1.rockspec /tmp/
+ADD waco-kid/app-scm-1.rockspec /tmp/
 RUN cd /tmp && luarocks make app-scm-1.rockspec
 
 VOLUME ["/app"]
 
-ENTRYPOINT /usr/local/openresty/nginx/sbin/nginx -p /tmp -c /app/src/nginx.conf
+ENTRYPOINT /usr/local/openresty/nginx/sbin/nginx -p /tmp -c /app/nginx/nginx.conf

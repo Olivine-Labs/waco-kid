@@ -1,5 +1,5 @@
 local json = require 'cjson'
-local http = require 'resty.http'
+local log = require 'log'
 
 local ETCD_URL = os.getenv('WK_ETCD_URL') or 'http://172.17.0.14:2379'
 local ETCD_PREFIX = os.getenv('WK_ETCD_PREFIX') or 'vulcand'
@@ -24,7 +24,7 @@ local function updateCache(cache, data)
         cache.frontends:set('*', frontends)
         cache.frontends:set(fid, newValue)
       end)
-      if not ok then ngx.log(ngx.ERR, 'Bad frontend '..fid..':'..err) end
+      if not ok then log.error('Bad frontend '..fid..':'..err) end
     elseif #key == 5 and key[2] == 'backends' and key[4] == 'servers' then
       local bid = key[3]
       local ok, err = pcall(function()
@@ -35,12 +35,13 @@ local function updateCache(cache, data)
           cache.backends:set(bid, backend)
         end
       end)
-      if not ok then ngx.log(ngx.ERR, 'Bad backend '..bid..':'..err) end
+      if not ok then log.error('Bad backend '..bid..':'..err) end
     end
   end
 end
 
 local function getUpdates(cache, route, all)
+  local http = require 'resty.http'
   local httpc = http.new()
   local waitIndex = nil
   local uri = table.concat({
@@ -63,7 +64,7 @@ local function getUpdates(cache, route, all)
       route.initializeRoutes(cache)
     end
   else
-    ngx.log(ngx.ERR, err)
+    log.error(err)
   end
 end
 
