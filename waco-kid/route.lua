@@ -2,7 +2,6 @@ local r3 = require 'ffi.r3'
 local log = require 'log'
 local o = {}
 local function routeMatcher(uri, method, host, headers, v)
-  print(uri, method, host, headers)
   if v.headers then
     for k, v in pairs(v.headers) do
       if c.headers[k] ~= v then
