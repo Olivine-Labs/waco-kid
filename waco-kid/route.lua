@@ -1,6 +1,6 @@
 local r3 = require 'ffi.r3'
 local log = require 'log'
-local o = {}
+
 local function routeMatcher(uri, method, host, headers, v)
   if v.headers then
     for k, v in pairs(v.headers) do
@@ -19,6 +19,8 @@ local function routeMatcher(uri, method, host, headers, v)
   end
   return v.upstream()
 end
+
+local o = {}
 
 function o.addRoutes(router, routes)
   for _, v in pairs(routes) do
@@ -89,6 +91,10 @@ function o.compileRoutes(cache, frontends)
   return routes
 end
 
+function o.match()
+  return false
+end
+
 function o.initializeRoutes(cache)
   local newRouter = r3()
   --manufacture initial routes
@@ -102,7 +108,7 @@ function o.initializeRoutes(cache)
   newRouter.finalize()
   local oldRouter = router
   o.router = newRouter
-  o.match = newRouter.match
+  o.match = o.router.match
   if oldRouter then oldRouter.free() end
 end
 

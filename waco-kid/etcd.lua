@@ -1,7 +1,7 @@
 local json = require 'cjson'
 local log = require 'log'
 
-local ETCD_URL = os.getenv('WK_ETCD_URL') or 'http://172.17.0.14:2379'
+local ETCD_URL = os.getenv('WK_ETCD_URL') or 'http://172.17.0.4:2379'
 local ETCD_PREFIX = os.getenv('WK_ETCD_PREFIX') or 'vulcand'
 
 local function updateCache(cache, data)
@@ -60,7 +60,7 @@ local function getUpdates(cache, route, all)
       local data = json.decode(res.body)
       local m, c = data.node.modifiedIndex, data.node.createdIndex
       waitIndex = math.max(m, c)
-      etcd.updateCache(cache, data.node)
+      updateCache(cache, data.node)
       route.initializeRoutes(cache)
     end
   else
