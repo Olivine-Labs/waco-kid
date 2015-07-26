@@ -37,4 +37,4 @@ local time = socket.gettime()
 for i = 1, num do
   local upstream = r.match('/lol/1', r.methods.GET, 'localhost', {})
 end
-print((socket.gettime() - time)..'s for '..num)
+print(num / (socket.gettime() - time)..' routes per second')
