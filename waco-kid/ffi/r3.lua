@@ -62,6 +62,7 @@ return function()
     end
 
     routes[#routes+1] = c.fn
+    return true
   end
 
   local function finalize()
@@ -73,7 +74,6 @@ return function()
   end
 
   local hostCache = {}
-
   local m = ffi.gc(r3.match_entry_createl('', 0), freeMatch)
   local function match(uri, method, host, headers)
     local m = m
@@ -92,7 +92,7 @@ return function()
     local n = r3.r3_tree_match_route(r, m)
     if n ~= nil then
       local routeId = tonumber(ffi.cast('int', n.data))
-      return routes[routeId](c)
+      return routes[routeId](uri, method, host, headers)
     end
 
     return false

@@ -1,7 +1,8 @@
 local r3 = require 'ffi.r3'
 local log = require 'log'
 local o = {}
-local function routeMatcher(c, v)
+local function routeMatcher(uri, method, host, headers, v)
+  print(uri, method, host, headers)
   if v.headers then
     for k, v in pairs(v.headers) do
       if c.headers[k] ~= v then
@@ -28,7 +29,7 @@ function o.addRoutes(router, routes)
       headers = v.headers,
       headersRegExp = v.headersRegExp,
       method = v.method and router.methods[v.method:upper()],
-      fn = function(c) return routeMatcher(c, v) end,
+      fn = function(uri, method, host, headers) return routeMatcher(uri, method, host, headers, v) end,
     })
     if not ok then log.error(err) end
   end
