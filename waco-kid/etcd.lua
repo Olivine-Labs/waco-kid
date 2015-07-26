@@ -31,7 +31,7 @@ local function updateCache(cache, data)
         local server = json.decode(data.value)
         if server.URL then
           local backend = cache.backends:get(bid) or {}
-          backend[#backend+1] = server.URL
+          backend[key[5]] = server.URL
           cache.backends:set(bid, backend)
         end
       end)

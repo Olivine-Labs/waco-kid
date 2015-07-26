@@ -40,14 +40,18 @@ function o.compileRoutes(cache, frontends)
   local routes = {}
   for fid, frontend in pairs(frontends) do
     local backend = cache.backends:get(frontend.BackendId)
+    local servers = {}
+    for _, v in pairs(backend) do
+      servers[#servers+1] = v
+    end
     local serverIndex = math.random(#backend)
     local upstream = function()
-      if serverIndex + 1 > #backend then
+      if serverIndex + 1 > #servers then
         serverIndex = 1
       else
         serverIndex = serverIndex + 1
       end
-      return backend[serverIndex]
+      return servers[serverIndex]
     end
     local path, host, method
     local headers, headersRegExp = {}, {}
