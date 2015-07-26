@@ -1,65 +1,96 @@
 local r3 = require 'ffi.r3'
-
-local router
-
-local function addRoutes(routes)
-  for k, v in pairs(routes) do
-    router.add(k, function(c)
-      if v.host and c.host ~= v.host then
+local log = require 'log'
+local o = {}
+local function routeMatcher(c, v)
+  if v.headers then
+    for k, v in pairs(v.headers) do
+      if c.headers[k] ~= v then
         return
       end
-
-      if v.method and c.method ~= v.method then
-        return
-      end
-
-      if v.headers then
-        for k, v in pairs(v.headers) do
-          if c.headers[k] ~= v then
-            return
-          end
-        end
-      end
-
-      return v.upstream()
-    end)
+    end
   end
-  router.finalize()
+
+  if v.headersRegExp then
+    for k, v in pairs(v.headersRegExp, 'aoj') do
+      if ngx.re.match(c.headers[k], v) then
+        return
+      end
+    end
+  end
+  return v.upstream()
 end
 
-local function compileRoutes(cache, frontends)
+function o.addRoutes(router, routes)
+  for _, v in pairs(routes) do
+    local ok, err = router.add({
+      uri = v.uri,
+      host = v.host,
+      headers = v.headers,
+      headersRegExp = v.headersRegExp,
+      method = v.method and router.methods[v.method:upper()],
+      fn = function(c) return routeMatcher(c, v) end,
+    })
+    if not ok then log.error(err) end
+  end
+end
+
+function o.compileRoutes(cache, frontends)
   local routes = {}
   for fid, frontend in pairs(frontends) do
     local backend = cache.backends:get(frontend.BackendId)
+    local serverIndex = math.random(#backend)
     local upstream = function()
-      return backend[math.random(#backend)]
+      if serverIndex + 1 > #backend then
+        serverIndex = 1
+      else
+        serverIndex = serverIndex + 1
+      end
+      return backend[serverIndex]
     end
     local path, host, method
-    local headers = {}
-    frontend.Route:gsub('Path%(["\']([^"\']*)["\']%)', function(m) path = m end)
-    frontend.Route:gsub('Host%(["\']([^"\']*)["\']%)', function(m) host = m end)
-    frontend.Route:gsub('Method%(["\']([^"\']*)["\']%)', function(m) method = m end)
-    frontend.Route:gsub('Header%(["\']([^"\']*)["\'],[%s]?["\']([^"\']*)["\']%)', function(header, value)
-      headers[header] = value
-    end)
-    if path then
-      path = path:gsub('<([^>]*)>', ':%1')
-    else
+    local headers, headersRegExp = {}, {}
+    local luaRoute = frontend.Route:gsub('&&', ';')
+    local function Path(p)
+      path = p:gsub('<([^>]*)>', '{%1}')
+    end
+    local function Host(h)
+      host = h
+    end
+    local function Header(name, value)
+      headers[name] = value
+    end
+    local function HeaderRegExp(name, value)
+      headersRegExp[name] = value
+    end
+
+    local routeContext = {
+      Path = Path,
+      PathRegExp = Path,
+      Host = Host,
+      HostRegExp = Host,
+      Header = Header,
+      HeaderRegExp = HeaderRegExp,
+    }
+    local Route = loadstring(luaRoute)
+    setfenv(Route, routeContext)
+    Route()
+    if not path then
       path = '/'
     end
-    routes[path] = {
+    routes[#routes+1] = {
+      uri = path,
       upstream = upstream,
       host = host,
       method = method,
       headers = headers,
     }
   end
+  table.sort(routes, function(a, b) return #a.uri>#b.uri end)
   return routes
 end
 
-local function initializeRoutes(cache)
-  if router then router.free() end
-  router = r3()
+function o.initializeRoutes(cache)
+  local newRouter = r3()
   --manufacture initial routes
   local list = cache.frontends:get('*') or {}
   local frontends = {}
@@ -67,18 +98,12 @@ local function initializeRoutes(cache)
     frontends[fid] = cache.frontends:get(fid)
   end
 
-  addRoutes(compileRoutes(cache, frontends))
+  o.addRoutes(newRouter, o.compileRoutes(cache, frontends))
+  newRouter.finalize()
+  local oldRouter = router
+  o.router = newRouter
+  o.match = newRouter.match
+  if oldRouter then oldRouter.free() end
 end
 
-local function match(c)
-  local ok = router.match(c)
-  if ok then return true, ok(c) end
-  return false
-end
-
-return {
-  match = match,
-  addRoutes = addRoutes,
-  compileRoutes = compileRoutes,
-  initializeRoutes = initializeRoutes,
-}
+return o

@@ -1,13 +1,13 @@
 local route = require 'route'
 
-local ok, upstream = route.match({
+local upstream = route.match({
   host=ngx.var.http_host,
   uri=ngx.var.uri,
   method=ngx.req.get_method(),
   headers=ngx.req.get_headers(),
 })
 
-if not ok then
+if not upstream then
   ngx.log(ngx.WARN, upstream)
   ngx.exit(ngx.HTTP_NOT_FOUND)
   return

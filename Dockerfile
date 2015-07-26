@@ -6,13 +6,12 @@ MAINTAINER Robert Ditthardt <dditthardt@olivinelabs.com>
 ENV DEBIAN_FRONTEND noninteractive
 ENV OPENRESTY_VERSION 1.7.10.2
 
-RUN apt-get update
-RUN apt-get upgrade -y
-RUN apt-get install -y wget git libpq-dev luarocks lua-sec liburiparser-dev libssl-dev libr3-dev
+RUN apt-get update && apt-get upgrade -y && apt-get -y build-dep nginx && apt-get install -y wget git libpq-dev luarocks lua-sec liburiparser-dev libssl-dev check libpcre3 libpcre3-dev libjemalloc-dev libjemalloc1 build-essential libtool automake autoconf pkg-config && apt-get -q -y clean && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/*
+
+# libr3
+RUN cd /tmp && git clone https://github.com/c9s/r3.git && cd r3 && ./autogen.sh && ./configure --with-malloc=jemalloc && make && make install && ln -s /usr/local/lib/libr3.so /usr/lib/libr3.so
 
 # Openresty (Nginx)
-RUN apt-get -y build-dep nginx \
-  && apt-get -q -y clean && rm -rf /var/cache/apt/archives/* /var/lib/apt/lists/*
 RUN wget -O ngx_openresty.tar.gz http://openresty.org/download/ngx_openresty-$OPENRESTY_VERSION.tar.gz \
   && tar xvfz ngx_openresty.tar.gz \
   && cd ngx_openresty-$OPENRESTY_VERSION \
