@@ -19,6 +19,14 @@ Only two variables really matter, `WK_ETCD_URL`, which should be the full url
 eg `http://10.0.0.1:2379` and `WK_ETCD_PREFIX` which defautls to `/vulcand`.
 
 ## Running
-Currently, Waco kid must be run from a checked out copy of the code. Run
-`docker run -it -e WK_ETCD_URL=http://${ETCD_SERVER_IP}:2379 -p 80:80 -v $PWD:/app
-waco-kid` from the root of the repo.
+Run `docker run -it -e WK_ETCD_URL=http://${ETCD_SERVER_IP}:2379 -p 80:80
+waco-kid` after building the image.
+
+## Development
+First build an image, then. Run
+`docker run -it -e WK_ETCD_URL=http://${ETCD_SERVER_IP}:2379 -p 80:80 -v
+$PWD:/app waco-kid` from the root of the repo. This mounts the current version
+of the app into the image so you don't need to rebuild every time.
+
+You can also run `./dev.sh` which will output the url to the container, but
+_does_ rebuild the image every time.

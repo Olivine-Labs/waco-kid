@@ -26,6 +26,6 @@ RUN mkdir /app
 ADD waco-kid/app-scm-1.rockspec /tmp/
 RUN cd /tmp && luarocks make app-scm-1.rockspec
 
-VOLUME ["/app"]
+ADD . /app
 
 ENTRYPOINT /usr/local/openresty/nginx/sbin/nginx -p /tmp -c /app/nginx/nginx.conf
